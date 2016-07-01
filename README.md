@@ -6,3 +6,7 @@ When an order is placed, the matching engine will match the order against the or
 
 Assumptions:
 1. Price is not considered.
+
+Dependencies:
+Clang with c++14 support
+cmake : version 3.5 or more
