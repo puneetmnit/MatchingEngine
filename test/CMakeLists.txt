@@ -8,12 +8,13 @@ ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK)
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 
 #get sources
-file(GLOB SOURCES "*.cpp" ) 
+file(GLOB TEST_SOURCES "*.cpp" ) 
+file(GLOB SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "../src/*.cpp")
+list(REMOVE_ITEM SOURCES "../src/Main.cpp")
 
 #executable
-add_executable(${test_exe} ${SOURCES})
+add_executable(${test_exe} ${TEST_SOURCES} ${SOURCES})
 target_link_libraries(${test_exe} ${Boost_LIBRARIES})
 
-message(STATUS "binary path: ${EXECUTABLE_OUTPUT_PATH}" ) 
 add_test(${test_exe} ${EXECUTABLE_OUTPUT_PATH}/${test_exe} )
 

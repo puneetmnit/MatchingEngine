@@ -1,31 +1,25 @@
-/**@file	MatchingEngine/Main.cpp
+/**@file	/Users/puneet/Documents/technical/projects/MatchingEngine/src/OrderBook.cpp
  * @author	puneet
  * @version	704
  * @date
- * 	Created:	Fri Jul  1 18:57:56 2016 \n
- * 	Last Update:	Fri Jul  1 18:57:56 2016
+ * 	Created:	Sun Jul  3 00:49:33 2016 \n
+ * 	Last Update:	Sun Jul  3 00:49:33 2016
  */
 
 /*===========================================================================*/
 /*===============================[ includes ]===============================*/
 /*===========================================================================*/
-#include <thread>
+
 #include "OrderBook.h"
+#include <iostream>
 
 /*===========================================================================*/
 /*===============================[ includes ]===============================*/
 /*===========================================================================*/
-
-
-int main()
+void OrderBook::start()
 {
-
-    OrderBook ob;
-    std::thread startThread(&OrderBook::start, &ob);
-
-    //theoretically the above thread will never return
-    startThread.join();
-
-    return 0;
+    bool is_listening = true;
+    std::cout << is_listening;
 }
+
 
