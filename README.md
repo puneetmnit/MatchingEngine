@@ -10,3 +10,5 @@ Assumptions:
 Dependencies:
 Clang with c++14 support
 cmake : version 3.5 or more
+boost : 1.59
+UTF : boost unit test framework
