@@ -11,50 +11,51 @@
 #include <algorithm>
 #include <iterator>
 #include <numeric>
+#include "../src/OrderUtils.h"
 
 namespace testUtils {
+
+    template<typename T>
+    auto getQuantity(T&& container, std::string stock) {
+        return std::accumulate(std::begin(container), std::end(container), 0, [&stock](auto sum, auto order) {
+                    return stock == order.stock_ ? sum + order.quantity_ : sum;
+                } );
+    } 
+
+    template<typename T>
+    auto getCount(T&& container, std::string stock) {
+        return std::count_if(std::begin(container), std::end(container), [&stock](auto order) {
+                    return stock == order.stock_ ;
+                } );
+    } 
+
     int getBuyOrderSize(const OrderBook& orderbook) { 
-        return orderbook.getBuyOrders.size(); 
+        return orderutils::getBuyOrders(orderbook).size(); 
     }
 
     int getSellOrderSize(const OrderBook& orderbook) { 
-        return orderbook.getSellOrders.size(); 
+        return orderutils::getSellOrders(orderbook).size(); 
     }
 
-    int getBuyOrderSize(const OrderBook& orderbook, string stock) {
-        auto buy_orders = orderbook.getBuyOrders();
-        return getCount(std::move(buy_orders), stock):
+    int getBuyOrderSize(const OrderBook& orderbook, std::string stock) {
+        auto buy_orders = orderutils::getBuyOrders(orderbook);
+        return getCount(std::move(buy_orders), stock);
     } 
 
-    int getSellOrderSize(const OrderBook& orderbook, string stock) {
-        auto sell_orders = orderbook.getSellOrders();
-        return getCount(std::move(sell_orders), stock):
+    int getSellOrderSize(const OrderBook& orderbook, std::string stock) {
+        auto sell_orders = orderutils::getSellOrders(orderbook);
+        return getCount(std::move(sell_orders), stock);
     } 
 
-    int getTotalBuyQuantity(const OrderBook& orderbook, string stock) {
-        auto buy_orders = orderbook.getBuyOrders();
-        return getQuantity(std::move(buy_orders), stock):
+    int getTotalBuyQuantity(const OrderBook& orderbook, std::string stock) {
+        auto buy_orders = orderutils::getBuyOrders(orderbook);
+        return getQuantity(std::move(buy_orders), stock);
     }
 
-    int getTotalSellQuantity(const OrderBook& orderbook, string stock) {
-        auto sell_orders = orderbook.getSellOrders();
-        return getQuantity(std::move(sell_orders), stock):
+    int getTotalSellQuantity(const OrderBook& orderbook, std::string stock) {
+        auto sell_orders = orderutils::getSellOrders(orderbook);
+        return getQuantity(std::move(sell_orders), stock);
     }
-
-    template<typename T>
-    auto getQuantity(T&& container, string stock) {
-        return std::accumulate(std::begin(container), std::end(container), 0, [](auto sum, auto order) {
-                    return stock == order.getStock() ? sum + order.getQuantity() : sum;
-                } );
-    } 
-
-    template<typename T>
-    auto getCount(T&& container, string stock) {
-        return std::count_if(std::begin(container), std::end(container), 0, [](auto order) {
-                    return stock == order.getStock() ;
-                } );
-    } 
-
 }// namespace testUtils
 
 #endif // _MATCHINGENGINE_TEST_TESTUTILS_H__

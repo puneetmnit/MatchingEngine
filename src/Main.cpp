@@ -19,12 +19,9 @@
 
 int main()
 {
+    /* dummy main*/
 
     OrderBook ob;
-    std::thread startThread(&OrderBook::start, &ob);
-
-    //theoretically the above thread will never return
-    startThread.join();
 
     return 0;
 }

@@ -6,9 +6,11 @@ When an order is placed, the matching engine will match the order against the or
 
 Assumptions:
 1. Price is not considered.
-2. Orders can be filled in random order, and not necessarily in FCFS manner
-3. No Order IDs
-4. No logging
+2. Orders filled in FCFS manner
+3. No logging
+4. Filled orders don't get removed from cache
+5. Order id is sent to OrderBook and there is no validation on it. This is used only for sending and validating success message.
+6. This is not thread-safe yet.
 
 Dependencies:
 Clang with c++14 support
