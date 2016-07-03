@@ -6,6 +6,9 @@ When an order is placed, the matching engine will match the order against the or
 
 Assumptions:
 1. Price is not considered.
+2. Orders can be filled in random order, and not necessarily in FCFS manner
+3. No Order IDs
+4. No logging
 
 Dependencies:
 Clang with c++14 support
