@@ -21,11 +21,12 @@ namespace  {
 
 bool isValid(const Order& order) 
 {
-    //only validity of for quantity till now.
+    //1. ticker must be between "A" and "Z" (both inclusive)
+    //2. quantity must be an integer greater than 0
     return order.quantity_ > 0 
-        && order.ticker_.size() == 1
-        && order.ticker_.at(0) >= 'A'
-        && order.ticker_.at(0) <= 'Z';
+        && order.ticker_.get().size() == 1
+        && order.ticker_.get().at(0) >= 'A'
+        && order.ticker_.get().at(0) <= 'Z';
 }
 
 void async_reply(int order_id, const ResponseCallbackT& callback)
@@ -80,6 +81,7 @@ void matchAndAdd(Order order, OrderBook::OrderBookCache& myStore, OrderBook::Ord
 
 }// namespace 
 
+std::atomic<int> Order::count{0};
 OrderBook::OrderBookCache::OrderBookCache()
 {
     initCache();

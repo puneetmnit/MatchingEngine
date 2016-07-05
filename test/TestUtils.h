@@ -56,6 +56,11 @@ namespace testUtils {
         auto sell_orders = orderutils::getSellOrders(orderbook);
         return getQuantity(std::move(sell_orders), ticker);
     }
+
+    std::string getRandomCPty();
+    std::string getRandomTicker();
+    std::string getRandomQuantity(int min=1, int max=1000);
+    std::string getOrderId();
 }// namespace testUtils
 
 #endif // _MATCHINGENGINE_TEST_TESTUTILS_H__

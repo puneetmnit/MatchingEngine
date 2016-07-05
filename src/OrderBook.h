@@ -8,11 +8,15 @@
 #ifndef _MATCHINGENGINE_SRC_ORDERBOOK_H__
 #define _MATCHINGENGINE_SRC_ORDERBOOK_H__
 
+#include <atomic>
 #include <functional>
 #include <string>
+#include <list>
 #include <unordered_map>
 #include <vector>
-#include <list>
+
+#include <boost/flyweight.hpp>
+
 #include "OrderUtils.h"
 
 
@@ -32,9 +36,13 @@ enum class OrderType { BUY, SELL };
 
 struct Order
 {
+public:
+    Order(std::string trader, int quantity, std::string ticker, OrderType type) : trader_(trader), quantity_(quantity), ticker_(ticker), type_(type), order_id_(count.fetch_add(1)) {}
+
     std::string trader_;
     int quantity_;
-    std::string ticker_;
+    boost::flyweight<std::string> ticker_; ///< using flyweight as there is very small number of tickers as compared to number of orders active at a given time.
+
     OrderType type_; ///< can be either BUY or SELL
     int order_id_;
 
@@ -44,6 +52,9 @@ struct Order
                 && ticker_ == that.ticker_
                 && type_ == that.type_);
     }
+
+private:
+        static std::atomic<int> count;
 
 };
 
