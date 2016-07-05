@@ -12,12 +12,13 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <list>
 #include "OrderUtils.h"
 
 
 struct Order;
 using OrderListT = std::vector<Order>;
-using OrderBookCacheValueT = std::vector<Order>; ///> \todo : there should be locable object also associated with it
+using OrderBookCacheValueT = std::list<Order>; ///> \todo : there should be locable object also associated with it
 using OrderBookCacheT = std::unordered_map<std::string, OrderBookCacheValueT>;
 using OrderBookCacheIterT = OrderBookCacheT::iterator;
 
@@ -33,16 +34,15 @@ struct Order
 {
     std::string trader_;
     int quantity_;
-    std::string stock_;
+    std::string ticker_;
     OrderType type_; ///< can be either BUY or SELL
     int order_id_;
 
     bool operator==(const Order& that) {
         return ( trader_ == that.trader_
                 && quantity_  == that.quantity_
-                && stock_ == that.stock_
-                && type_ == that.type_
-                );
+                && ticker_ == that.ticker_
+                && type_ == that.type_);
     }
 
 };
@@ -59,6 +59,11 @@ class OrderBook
 public:
     //return false if not a valid order
     bool addOrder(Order order);   ///< use to add new orders
+
+    /** \brief set a callback which will be executed asynchronously on matching of any order
+     *
+     * \param callback the callback to call. This should be equivalent to a function returning void and accepting an integer (for order_id)
+     */ 
     void setResponseCallback(const ResponseCallbackT& callback) {
         callback_ = callback;
     }
@@ -78,7 +83,7 @@ public:
         void insert(Order order) ;
         
         /**
-         * \brief Returns the bounds of the range that includes all the elements of the range [first,last) with key equivalent to order.stock_.
+         * \brief Returns the bounds of the range that includes all the elements of the range [first,last) with key equivalent to order.ticker_.
          */
         std::pair<OrderBookCacheValueT::iterator, OrderBookCacheValueT::iterator> equal_range(const Order& order);
 

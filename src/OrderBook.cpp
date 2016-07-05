@@ -23,9 +23,9 @@ bool isValid(const Order& order)
 {
     //only validity of for quantity till now.
     return order.quantity_ > 0 
-        && order.stock_.size() == 1
-        && order.stock_.at(0) >= 'A'
-        && order.stock_.at(0) <= 'Z';
+        && order.ticker_.size() == 1
+        && order.ticker_.at(0) >= 'A'
+        && order.ticker_.at(0) <= 'Z';
 }
 
 void async_reply(int order_id, const ResponseCallbackT& callback)
@@ -130,7 +130,7 @@ void OrderBook::OrderBookCache::insert(Order order)
 {
     //no lock needed here, as we are never going to update this cache.
     //We'll just be adding the orders to the vector corresponding to this stock.
-    auto itr =  orders_.find(order.stock_);
+    auto itr =  orders_.find(order.ticker_);
     if (itr == orders_.end() ) {
         throw std::runtime_error("Corrupt Order Book Cache. All stock symbols must be present in it all the time.");
     }
@@ -144,7 +144,7 @@ std::pair<OrderBookCacheValueT::iterator, OrderBookCacheValueT::iterator> OrderB
 {
     //return the range of the value i.e. vector, for the stock as the key
 
-    auto itr =  orders_.find(order.stock_);
+    auto itr =  orders_.find(order.ticker_);
     if (itr == orders_.end() ) {
         throw std::runtime_error("Corrupt Order Book Cache. All stock symbols must be present in it all the time.");
     }
