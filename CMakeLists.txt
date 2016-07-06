@@ -11,7 +11,7 @@ set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 
 #boost
-find_package(Boost 1.59 REQUIRED COMPONENTS unit_test_framework) 
+find_package(Boost 1.59 REQUIRED COMPONENTS unit_test_framework timer) 
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
 
 #include

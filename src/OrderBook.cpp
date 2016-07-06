@@ -123,7 +123,9 @@ OrderListT OrderBook::OrderBookCache::flattenCache() const
 {
     OrderListT orders;
     for(auto& value : orders_) {
-        orders.insert(orders.end(), value.second.begin(), value.second.end());
+        for_each(value.second.begin(), value.second.end(), [&orders](auto o) {
+                orders.emplace_back(std::move(o));
+                });
     } 
     return orders;
 }

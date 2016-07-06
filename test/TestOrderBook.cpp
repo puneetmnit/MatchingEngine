@@ -14,8 +14,6 @@
 #include "../src/OrderBook.h"
 
 #include <algorithm>
-#include <iostream>
-#include <thread>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
@@ -28,6 +26,7 @@
 /*===============================[ include ]===============================*/
 /*===========================================================================*/
 
+BOOST_AUTO_TEST_SUITE(TestSingleThreaded)
 namespace bdata = boost::unit_test::data;
 BOOST_DATA_TEST_CASE(test_zero_quantity, bdata::xrange(2))
 {
@@ -307,4 +306,4 @@ BOOST_AUTO_TEST_CASE(test_partial_match)
     ob.addOrder(order_D_B_buy);
 
 }
-
+BOOST_AUTO_TEST_SUITE_END()

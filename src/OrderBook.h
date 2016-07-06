@@ -39,20 +39,34 @@ struct Order
 public:
     Order(std::string trader, int quantity, std::string ticker, OrderType type) : trader_(trader), quantity_(quantity), ticker_(ticker), type_(type), order_id_(count.fetch_add(1)) {}
 
-    std::string trader_;
-    int quantity_;
-    boost::flyweight<std::string> ticker_; ///< using flyweight as there is very small number of tickers as compared to number of orders active at a given time.
+    Order(const Order& order) : trader_(order.trader_), quantity_(order.quantity_), ticker_(order.ticker_), type_(order.type_), order_id_(order.order_id_)
+    {}
 
-    OrderType type_; ///< can be either BUY or SELL
-    int order_id_;
+    Order(Order&& order) noexcept : trader_(std::move(order.trader_)), quantity_(std::move(order.quantity_)), ticker_(order.ticker_), type_(order.type_), order_id_(order.order_id_)
+    {}
 
-    bool operator==(const Order& that) {
+    //no assignment operators
+    Order& operator=(const Order&) = delete;
+    Order& operator=(Order&&) = delete;
+
+    
+
+   bool operator==(const Order& that) {
         return ( trader_ == that.trader_
                 && quantity_  == that.quantity_
                 && ticker_ == that.ticker_
                 && type_ == that.type_);
     }
 
+public:
+    std::string trader_;
+    int quantity_;
+    //std::atomic<int> quantity_;
+    boost::flyweight<std::string> ticker_; ///< using flyweight as there is very small number of tickers as compared to number of orders active at a given time.
+
+    OrderType type_; ///< can be either BUY or SELL
+    int order_id_;
+    
 private:
         static std::atomic<int> count;
 
