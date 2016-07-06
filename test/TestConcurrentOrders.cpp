@@ -46,7 +46,7 @@ namespace bdata = boost::unit_test::data;
 BOOST_DATA_TEST_CASE(test_add_orders, bdata::xrange(2))
 {
     std::cout << "TEST: test_add_orders:\n";
-    constexpr const unsigned num_orders{1000000};
+    constexpr const unsigned num_orders(1.000000);
     const unsigned num_threads = 1;//std::thread::hardware_concurrency();
     std::cout << "threads: " << num_threads << std::endl;
     const unsigned partition_size = num_orders / num_threads;
@@ -143,7 +143,9 @@ BOOST_AUTO_TEST_CASE(test_match_orders)
 
     auto begin = orders.begin();
     iterators.push_back(begin);
-    while(distance(begin, orders.end()) >= partition_size) {
+    auto count = partition_size;
+    while(distance(begin, orders.end()) > partition_size) {
+        count += partition_size;
         advance(begin, partition_size);
         iterators.push_back(begin);
     };
