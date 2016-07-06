@@ -46,7 +46,7 @@ namespace bdata = boost::unit_test::data;
 BOOST_DATA_TEST_CASE(test_add_orders, bdata::xrange(2))
 {
     std::cout << "TEST: test_add_orders:\n";
-    constexpr const unsigned num_orders(1.000000);
+    constexpr const unsigned num_orders(10000.00);
     const unsigned num_threads = 1;//std::thread::hardware_concurrency();
     std::cout << "threads: " << num_threads << std::endl;
     const unsigned partition_size = num_orders / num_threads;
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(test_match_orders)
 {
     std::cout << "TEST: test_match_orders:\n";
 
-    constexpr const unsigned num_orders{1000000};
+    constexpr const unsigned num_orders(10000.00);
     const unsigned num_threads = 1;//std::thread::hardware_concurrency();
     std::cout << "threads: " << num_threads << std::endl;
     const unsigned partition_size = num_orders / num_threads;
@@ -123,6 +123,11 @@ BOOST_AUTO_TEST_CASE(test_match_orders)
         orders.emplace_back(rand_gen.getRandomString(1), rand_gen.getRandomInt(), rand_gen.getRandomTicker(),static_cast<OrderType>(rand_gen.getRandomInt(0,1)));
     }
     std::cout << "num of orders: " << orders.size()<< std::endl;
+    //std::cout << "=====ORDERS====" << std::endl;
+
+    //for (auto& order: orders){
+        //std::cout << static_cast<int>(order.type_ )<< " " << order.ticker_ << " " << order.quantity_ << std::endl;
+    //};
 
     //caculating buy-sell
     //find total quantity to compare later

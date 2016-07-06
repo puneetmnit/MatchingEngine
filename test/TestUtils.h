@@ -14,6 +14,7 @@
 #include <map>
 #include <numeric>
 #include <random>
+#include "../src/OrderBook.h"
 #include "../src/OrderUtils.h"
 
 namespace testUtils {
@@ -88,63 +89,19 @@ namespace testUtils {
         return getQuantity(std::move(sell_orders), ticker);
     }
 
-    inline auto getOpenPosition(const OrderBook& orderbook) {
-        std::map<std::string, int> result;
-
-        auto buy_orders = orderutils::getBuyOrders(orderbook);
-        for_each(buy_orders.begin(), buy_orders.end(), [&result](auto& order) {
-                    auto res = result.find(order.ticker_);
-                    if (res != result.end()) {
-                        res->second += order.quantity_;
-                    }
-                    else {
-                        result[order.ticker_] = order.quantity_;
-                    }
-                });
-
-        auto sell_orders = orderutils::getSellOrders(orderbook);
-        for_each(sell_orders.begin(), sell_orders.end(), [&result](auto& order) {
-                    auto res = result.find(order.ticker_);
-                    if (res != result.end()) {
-                        res->second -= order.quantity_;
-                    }
-                    else {
-                        result[order.ticker_] = -1*order.quantity_;
-                    }
-                });
-
-        return result;
-    } 
+    std::map<std::string,int> getOpenPosition(const OrderBook& orderbook) ;
 
     class Random {
     public:
         Random(): seed(std::chrono::system_clock::now().time_since_epoch().count()), generator(seed) {} 
 
-        std::string getRandomString(int size=1)
-        {
-            std::uniform_int_distribution<int> dist(0,25);
-            
-            auto pos = dist(generator);
+        std::string getRandomString(int size=1);
+         
 
-            std::string str;
-            while(size-- > 0) {
-                str += std::string(1, 'A' + pos);
-            }
+        int getRandomInt(int min=1, int max=10);
+         
 
-            return str;
-
-        } 
-
-        int getRandomInt(int min=1, int max=10)
-        {
-            std::uniform_int_distribution<int> dist(min,max);
-            
-            return dist(generator);
-        } 
-
-        std::string getRandomTicker() {
-            return getRandomString(1);
-        } 
+        std::string getRandomTicker() ; 
 
 
     private:
