@@ -10,6 +10,7 @@
 
 #include <atomic>
 #include <functional>
+#include <mutex>
 #include <string>
 #include <list>
 #include <unordered_map>
@@ -23,7 +24,7 @@
 struct Order;
 using OrderListT = std::vector<Order>;
 using OrderBookCacheValueT = std::list<Order>; ///> \todo : there should be locable object also associated with it
-using OrderBookCacheT = std::unordered_map<std::string, OrderBookCacheValueT>;
+using OrderBookCacheT = std::unordered_map<std::string, std::pair<std::unique_ptr<std::mutex>,OrderBookCacheValueT>>;
 using OrderBookCacheIterT = OrderBookCacheT::iterator;
 
 using ResponseCallbackT = std::function<void(int)>;
@@ -39,15 +40,15 @@ struct Order
 public:
     Order(std::string trader, int quantity, std::string ticker, OrderType type) : trader_(trader), quantity_(quantity), ticker_(ticker), type_(type), order_id_(count.fetch_add(1)) {}
 
-    Order(const Order& order) : trader_(order.trader_), quantity_(order.quantity_), ticker_(order.ticker_), type_(order.type_), order_id_(order.order_id_)
-    {}
+    //Order(const Order& order) : trader_(order.trader_), quantity_(order.quantity_.load()), ticker_(order.ticker_), type_(order.type_), order_id_(order.order_id_)
+    //{}
 
-    Order(Order&& order) noexcept : trader_(std::move(order.trader_)), quantity_(std::move(order.quantity_)), ticker_(order.ticker_), type_(order.type_), order_id_(order.order_id_)
-    {}
+    //Order(Order&& order) noexcept : trader_(std::move(order.trader_)), quantity_(order.quantity_.load()), ticker_(std::move(order.ticker_)), type_(std::move(order.type_)), order_id_(std::move(order.order_id_))
+    //{}
 
     //no assignment operators
-    Order& operator=(const Order&) = delete;
-    Order& operator=(Order&&) = delete;
+    //Order& operator=(const Order&) = delete;
+    //Order& operator=(Order&&) = delete;
 
     
 
@@ -111,6 +112,7 @@ public:
          * \brief Returns the bounds of the range that includes all the elements of the range [first,last) with key equivalent to order.ticker_.
          */
         std::pair<OrderBookCacheValueT::iterator, OrderBookCacheValueT::iterator> equal_range(const Order& order);
+        //std::atomic<OrderBookCacheValueT::pointer> locked_element_;
 
     private:
         /**
@@ -118,7 +120,8 @@ public:
          */
         void initCache();
 
-    private:
+
+    public:
         OrderBookCacheT orders_;
     }; 
 

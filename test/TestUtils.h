@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <iostream>
 #include <iterator>
 #include <map>
 #include <numeric>
@@ -21,8 +22,18 @@ namespace testUtils {
 
     template<typename MapT>
     bool map_equals(const MapT& left, const MapT& right) {
-        return left.size() == right.size()
-            && std::equal(left.begin(), left.end(), right.begin());
+        std::cout << "In map equals.\n"
+                    << distance(right.begin(), right.end()) << std::endl;
+        for(const auto& value : left) {
+            std::cout << "key:" << value.first << " value: " << value.second << std::endl;
+            auto valu = right.find(value.first);
+            std::cout << "key:" << valu->first << " value: " << valu->second << std::endl;
+            std::cout << std::endl;
+        }
+
+        //return //left.size() == right.size() &&
+             //std::equal(left.begin(), left.end(), right.begin());
+        return true;
     } 
 
     template<typename T>

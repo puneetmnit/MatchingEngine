@@ -47,7 +47,7 @@ BOOST_DATA_TEST_CASE(test_add_orders, bdata::xrange(2))
 {
     std::cout << "TEST: test_add_orders:\n";
     constexpr const unsigned num_orders(10000.00);
-    const unsigned num_threads = 1;//std::thread::hardware_concurrency();
+    const unsigned num_threads = std::thread::hardware_concurrency();
     std::cout << "threads: " << num_threads << std::endl;
     const unsigned partition_size = num_orders / num_threads;
 
@@ -109,8 +109,8 @@ BOOST_AUTO_TEST_CASE(test_match_orders)
 {
     std::cout << "TEST: test_match_orders:\n";
 
-    constexpr const unsigned num_orders(10000.00);
-    const unsigned num_threads = 1;//std::thread::hardware_concurrency();
+    constexpr const unsigned num_orders(1.000000);
+    const unsigned num_threads = std::thread::hardware_concurrency();
     std::cout << "threads: " << num_threads << std::endl;
     const unsigned partition_size = num_orders / num_threads;
 
@@ -138,7 +138,7 @@ BOOST_AUTO_TEST_CASE(test_match_orders)
             res->second += (OrderType::BUY == order.type_ ? order.quantity_ : (-1 * order.quantity_));
         }
         else {  //not found
-            exp_total_qty[order.ticker_] = (OrderType::BUY == order.type_ ? order.quantity_ : (-1 * order.quantity_));
+            exp_total_qty[order.ticker_] = (OrderType::BUY == order.type_ ? order.quantity_: (-1 * order.quantity_));
         } 
     } 
 
@@ -181,7 +181,8 @@ BOOST_AUTO_TEST_CASE(test_match_orders)
     auto actual_total_qty = testUtils::getOpenPosition(ob);
 
     BOOST_REQUIRE(testUtils::map_equals(exp_total_qty, actual_total_qty));
-
+    std::cout << "done\n";
 
 }
+
 BOOST_AUTO_TEST_SUITE_END()
