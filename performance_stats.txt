@@ -1,0 +1,23 @@
+Running 63 test cases...
+TEST: test_match_orders:
+threads: 4
+num of orders: 10000
+ 0.018216s wall, 0.030000s user + 0.000000s system = 0.030000s CPU (164.7%)
+
+Running 63 test cases...
+TEST: test_match_orders:
+threads: 4
+num of orders: 100000
+ 0.123901s wall, 0.330000s user + 0.040000s system = 0.370000s CPU (298.6%)
+
+Running 63 test cases...
+TEST: test_match_orders:
+threads: 4
+num of orders: 1000000
+ 1.109372s wall, 3.180000s user + 0.260000s system = 3.440000s CPU (310.1%)
+
+Running 63 test cases...
+TEST: test_match_orders:
+threads: 4
+num of orders: 10000000
+ 9.624797s wall, 32.910000s user + 2.580000s system = 35.490000s CPU (368.7%)
