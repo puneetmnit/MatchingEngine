@@ -12,11 +12,13 @@
 #include <functional>
 #include <mutex>
 #include <string>
+#include <thread>
 #include <list>
 #include <unordered_map>
 #include <vector>
 
 #include <boost/flyweight.hpp>
+
 
 #include "OrderUtils.h"
 
@@ -38,7 +40,7 @@ enum class OrderType { BUY, SELL };
 struct Order
 {
 public:
-    Order(std::string trader, int quantity, std::string ticker, OrderType type) : trader_(trader), quantity_(quantity), ticker_(ticker), type_(type), order_id_(count.fetch_add(1)) {}
+    Order(std::string trader, int quantity, std::string ticker, OrderType type) : trader_(trader), quantity_(quantity), ticker_(ticker), type_(type), order_id_(count_.fetch_add(1)) {}
 
     //Order(const Order& order) : trader_(order.trader_), quantity_(order.quantity_.load()), ticker_(order.ticker_), type_(order.type_), order_id_(order.order_id_)
     //{}
@@ -62,14 +64,15 @@ public:
 public:
     std::string trader_;
     int quantity_;
+    std::string ticker_;
     //std::atomic<int> quantity_;
-    boost::flyweight<std::string> ticker_; ///< using flyweight as there is very small number of tickers as compared to number of orders active at a given time.
+    //boost::flyweight<std::string> ticker_; ///< using flyweight as there is very small number of tickers as compared to number of orders active at a given time.
 
     OrderType type_; ///< can be either BUY or SELL
     int order_id_;
     
 private:
-        static std::atomic<int> count;
+        static std::atomic<int> count_;
 
 };
 
@@ -83,6 +86,8 @@ private:
 class OrderBook
 {
 public:
+    ~OrderBook();
+
     //return false if not a valid order
     bool addOrder(Order order);   ///< use to add new orders
 
@@ -123,13 +128,18 @@ public:
 
     public:
         OrderBookCacheT orders_;
-    }; 
+    };
+
+    std::vector<std::thread> replies_;
+    std::mutex replyLock_;
 
 private:
     OrderBookCache buyOrders_;
     OrderBookCache sellOrders_;
 
     ResponseCallbackT callback_;
+
+
 
 };
 

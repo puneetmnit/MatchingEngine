@@ -26,27 +26,15 @@ std::map<std::string,int> testUtils::getOpenPosition(const OrderBook& orderbook)
 {
     std::map<std::string, int> result;
 
-    auto buy_orders = orderutils::getBuyOrders(orderbook);
-    
-    for_each(buy_orders.begin(), buy_orders.end(), [&result](auto& order) {
-            auto res = result.find(order.ticker_);
-            if (res != result.end()) {
-            res->second += order.quantity_;
-            }
-            else {
-            result[order.ticker_] = order.quantity_;
-            }
+    const auto& buy_orders = orderutils::getBuyOrders(orderbook);
+
+    for_each(buy_orders.begin(), buy_orders.end(), [&result](const auto& order) {
+           result[order.ticker_] += order.quantity_;
             });
 
-    auto sell_orders = orderutils::getSellOrders(orderbook);
-    for_each(sell_orders.begin(), sell_orders.end(), [&result](auto& order) {
-            auto res = result.find(order.ticker_);
-            if (res != result.end()) {
-            res->second -= order.quantity_;
-            }
-            else {
-            result[order.ticker_] = -1*order.quantity_;
-            }
+    const auto& sell_orders = orderutils::getSellOrders(orderbook);
+    for_each(sell_orders.begin(), sell_orders.end(), [&result](const auto& order) {
+            result[order.ticker_] -= order.quantity_;
             });
 
     return result;

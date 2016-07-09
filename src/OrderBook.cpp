@@ -26,65 +26,63 @@ bool isValid(const Order& order)
     //1. ticker must be between "A" and "Z" (both inclusive)
     //2. quantity must be an integer greater than 0
     return order.quantity_ > 0 
-        && order.ticker_.get().size() == 1
-        && order.ticker_.get().at(0) >= 'A'
-        && order.ticker_.get().at(0) <= 'Z';
+        && order.ticker_.size() == 1
+        && order.ticker_.at(0) >= 'A'
+        && order.ticker_.at(0) <= 'Z';
 }
 
-void async_reply(int order_id, const ResponseCallbackT& callback)
+void async_reply(OrderBook* ob, int order_id, ResponseCallbackT callback)
 {
-    std::async(std::launch::async, callback, order_id);
+    if (callback) {
+        std::lock_guard<std::mutex> guard{ob->replyLock_};
+        ob->replies_.emplace_back(callback, order_id);
+    }
+
 };
 
-void matchAndAdd(Order order, OrderBook::OrderBookCache& myStore, OrderBook::OrderBookCache& otherSide, const ResponseCallbackT& callback)
+void matchAndAdd(OrderBook* ob, Order order, OrderBook::OrderBookCache& myStore, OrderBook::OrderBookCache& otherSide, const ResponseCallbackT& callback)
 {
+    std::vector<std::thread> replies;
     // 1. find the match
     //auto result = otherSide.equal_range(order);
-    
+
+
     auto res =  otherSide.orders_.find(order.ticker_);
     if (res == otherSide.orders_.end() ) {
         throw std::runtime_error("Corrupt Order Book Cache. All stock symbols must be present in the cache at all the time.");
     }
 
     std::unique_lock<std::mutex> guard(*(res->second.first));
-    
-    auto result{std::make_pair(res->second.second.begin(), res->second.second.end())};
-    // 2. adjust the quantities
-    if (result.first != result.second) {
-        //match found
-        auto itr = result.first;
 
-        while (itr != result.second && order.quantity_ >= itr->quantity_) {
+    auto& orders = res->second.second;
+    //auto result{std::make_pair(res->second.second.begin(), res->second.second.end())};
+    // 2. adjust the quantities
+    //if (result.first != result.second) {
+    if (!orders.empty()) {
+        //match found
+        //auto itr = result.first;
+        auto itr = orders.begin();
+
+        while (itr != orders.end() //result.second
+               && order.quantity_ >= itr->quantity_) {
             // Remember, we don't allow 0 quantity orders in the order book at the first place
-            //while (otherSide.locked_element_ == &*itr) {
-                //this element is locked at the moment. wait for it to get unlocked
-                //std::this_thread::yield();
-            //}
-            // this quantity check is needed, as there might be some orders, which are still waiting to be removed from the cache. 
-            //otherSide.locked_element_.exchange(&*itr);
-            if (itr->quantity_ > 0) {
+            //if (itr->quantity_ > 0) {
                 order.quantity_ -= itr->quantity_;
                 itr->quantity_ = 0;
 
                 /// \todo : remove 0 quantity orders from cache
                 //remove from cache and send the reply, asynchronously
-                //async_remove_and_reply(otherSide, itr); ///< \todo
-                async_reply(itr->order_id_, callback);
+                async_reply(ob, itr->order_id_, callback);
                 //remove this node
-                itr = res->second.second.erase(itr);
-            }
-            //otherSide.locked_element_.exchange(nullptr);
-            else {
-                ++itr;
-            } 
+                orders.erase(itr++);
+            //}
+            //else {
+              //  ++itr;
+            //}
         }
 
-        //while (otherSide.locked_element_ == &*itr) {
-            //this element is locked at the moment. wait for it to get unlocked
-            //std::this_thread::yield();
-        //}
-        //otherSide.locked_element_.exchange(&*itr);
-        if (itr != result.second && order.quantity_ > 0) {
+        if (itr != orders.end()//result.second
+            && order.quantity_ > 0) {
             //itr->quantity_ must be greater than order.quantity_ at this point
             if (itr->quantity_ <= order.quantity_) {
                 throw std::logic_error("Incorrent order matching.");
@@ -92,24 +90,25 @@ void matchAndAdd(Order order, OrderBook::OrderBookCache& myStore, OrderBook::Ord
             itr->quantity_ -= order.quantity_;
             order.quantity_ = 0;
         }
-        //otherSide.locked_element_.exchange(nullptr);
     }
     guard.unlock();
 
     if (order.quantity_ == 0) {
         //send success message
-        async_reply(order.order_id_, callback);
+        async_reply(ob, order.order_id_, callback);
     }
     else {
         //adding to the end of the list, so no lock needed
         myStore.insert(std::move(order));
-    } 
-    
+    }
+
+
+
 }
 
 }// namespace 
 
-std::atomic<int> Order::count{0};
+std::atomic<int> Order::count_{0};
 OrderBook::OrderBookCache::OrderBookCache() 
     //: locked_element_(nullptr)
 {
@@ -129,11 +128,9 @@ void OrderBook::OrderBookCache::initCache()
 OrderListT OrderBook::OrderBookCache::flattenCache() const
 {
     OrderListT orders;
-    for(auto& value : orders_) {
+    for(const auto& value : orders_) {
         std::lock_guard<std::mutex> guard(*(const_cast<OrderBookCacheT::value_type&>(value).second.first));
-        for_each(value.second.second.begin(), value.second.second.end(), [&orders](auto o) {
-                orders.emplace_back(std::move(o));
-                });
+        std::copy(value.second.second.begin(), value.second.second.end(), std::back_inserter(orders));
     } 
     return orders;
 }
@@ -151,7 +148,8 @@ void OrderBook::OrderBookCache::insert(Order order)
     itr->second.second.emplace_back(order);
 }
 
-std::pair<OrderBookCacheValueT::iterator, OrderBookCacheValueT::iterator> OrderBook::OrderBookCache::equal_range(const Order& order) 
+/*
+std::pair<OrderBookCacheValueT::iterator, OrderBookCacheValueT::iterator> OrderBook::OrderBookCache::equal_range(const Order& order)
 {
     //return the range of the value i.e. vector, for the stock as the key
 
@@ -165,7 +163,8 @@ std::pair<OrderBookCacheValueT::iterator, OrderBookCacheValueT::iterator> OrderB
     //skip all with 0 quantities
     //return std::make_pair(std::find_if_not(itr->second.begin(), itr->second.end(), [](const auto& element){return element.quantity_ == 0;}), itr->second.end());
 
-} 
+}
+*/
 
 bool OrderBook::addOrder(Order order)
 {
@@ -174,13 +173,20 @@ bool OrderBook::addOrder(Order order)
 
     if (OrderType::BUY == order.type_) {
         // try to match with sell
-        matchAndAdd(std::move(order), buyOrders_, sellOrders_, callback_);
+        matchAndAdd(this, std::move(order), buyOrders_, sellOrders_, callback_);
     }
     else {
-        matchAndAdd(std::move(order), sellOrders_, buyOrders_, callback_);
+        matchAndAdd(this, std::move(order), sellOrders_, buyOrders_, callback_);
     }
 
     return true;
+}
+
+OrderBook::~OrderBook()
+{
+    for(auto& t : replies_) {
+        if (t.joinable()) t.join();
+    }
 }
 
 

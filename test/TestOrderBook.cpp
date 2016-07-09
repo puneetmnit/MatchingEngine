@@ -95,23 +95,11 @@ BOOST_AUTO_TEST_CASE(test_persist_sell_order)
 
 BOOST_AUTO_TEST_CASE(test_match_buy)
 {
-    // create order book
-    OrderBook ob;
-
     std::vector<int> actual_fills;
     std::vector<int> expected_fills;
-    ob.setResponseCallback( [&](int order_id) { 
-                BOOST_REQUIRE(std::find(expected_fills.begin(), expected_fills.end(), order_id) != expected_fills.end());
-                actual_fills.emplace_back(order_id);
 
-                if (actual_fills.size() == expected_fills.size()) {
-                    BOOST_CHECK_EQUAL(testUtils::getBuyOrderSize(ob), 0);
-                    BOOST_CHECK_EQUAL(testUtils::getTotalSellQuantity(ob, "S"), 0);
-                    //BOOST_CHECK_EQUAL(testUtils::getSellOrderSize(ob, "S"), 0);
-                    BOOST_CHECK_EQUAL(testUtils::getTotalSellQuantity(ob, "X"), 200);
-                    //BOOST_CHECK_EQUAL(testUtils::getSellOrderSize(ob, "X"), 1);
-                }
-            });
+    // create order book
+    OrderBook ob;
 
     //add sell order
     Order order_A_200S_sell{"A", 200, "S", OrderType::SELL};
@@ -125,32 +113,30 @@ BOOST_AUTO_TEST_CASE(test_match_buy)
 
     //add buy order
     Order order_B_200S_buy{"B", 200, "S", OrderType::BUY};
-    expected_fills.emplace_back(order_B_200S_buy.order_id_);
-    expected_fills.emplace_back(order_A_200S_sell.order_id_);
+    expected_fills.push_back(order_B_200S_buy.order_id_);
+    expected_fills.push_back(order_A_200S_sell.order_id_);
+    ob.setResponseCallback( [&expected_fills, &actual_fills, &ob](int order_id) {
+        BOOST_REQUIRE(std::find(expected_fills.begin(), expected_fills.end(), order_id) != expected_fills.end());
+        actual_fills.push_back(order_id);
+
+        if (actual_fills.size() == expected_fills.size()) {
+            BOOST_CHECK_EQUAL(testUtils::getBuyOrderSize(ob), 0);
+            BOOST_CHECK_EQUAL(testUtils::getTotalSellQuantity(ob, "S"), 0);
+            //BOOST_CHECK_EQUAL(testUtils::getSellOrderSize(ob, "S"), 0);
+            BOOST_CHECK_EQUAL(testUtils::getTotalSellQuantity(ob, "X"), 200);
+            //BOOST_CHECK_EQUAL(testUtils::getSellOrderSize(ob, "X"), 1);
+        }
+    });
     ob.addOrder(order_B_200S_buy);
 }
 
 BOOST_AUTO_TEST_CASE(test_match_sell)
 {
-    // create order book
-    OrderBook ob;
     std::vector<int> actual_fills;
     std::vector<int> expected_fills;
 
-    ob.setResponseCallback( [&](int order_id) { 
-                BOOST_REQUIRE(std::find(expected_fills.begin(), expected_fills.end(), order_id) != expected_fills.end());
-                actual_fills.emplace_back(order_id);
-
-                if (actual_fills.size() == expected_fills.size()) {
-                    BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "S"), 0);
-                    //BOOST_CHECK_EQUAL(testUtils::getBuyOrderSize(ob, "S"), 0);
-                    BOOST_CHECK_EQUAL(testUtils::getSellOrderSize(ob), 0);
-                    BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "X"), 200);
-                    //BOOST_CHECK_EQUAL(testUtils::getBuyOrderSize(ob, "X"), 1);
-                }
-            });
-
-
+    // create order book
+    OrderBook ob;
     //add buy order
     Order order_B_200S_buy{"B", 200, "S", OrderType::BUY};
     ob.addOrder(order_B_200S_buy);
@@ -162,36 +148,33 @@ BOOST_AUTO_TEST_CASE(test_match_sell)
     
     //add sell order
     Order order_A_200S_sell{"A", 200, "S", OrderType::SELL};
-    expected_fills.emplace_back(order_A_200S_sell.order_id_);
-    expected_fills.emplace_back(order_B_200S_buy.order_id_);
+    expected_fills.push_back(order_A_200S_sell.order_id_);
+    expected_fills.push_back(order_B_200S_buy.order_id_);
+    ob.setResponseCallback( [&expected_fills, &actual_fills, &ob](int order_id) {
+        BOOST_REQUIRE(std::find(expected_fills.begin(), expected_fills.end(), order_id) != expected_fills.end());
+        actual_fills.push_back(order_id);
+
+        if (actual_fills.size() == expected_fills.size()) {
+            BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "S"), 0);
+            BOOST_CHECK_EQUAL(testUtils::getSellOrderSize(ob), 0);
+            BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "X"), 200);
+        }
+    });
+
+
     ob.addOrder(order_A_200S_sell);
 }
 
 BOOST_AUTO_TEST_CASE(test_match_one_to_many)
 {
-    // create order book
-    OrderBook ob;
     std::vector<int> actual_fills;
     std::vector<int> expected_fills;
     int total_buy_X;
     int expected_pending_buy_S;
 
-    ob.setResponseCallback( [&](int order_id) { 
-                BOOST_REQUIRE(std::find(expected_fills.begin(), expected_fills.end(), order_id) != expected_fills.end());
-                actual_fills.emplace_back(order_id);
 
-                if (actual_fills.size() == expected_fills.size()) {
-                    //sell order should have been completely matched
-                    BOOST_REQUIRE_EQUAL(testUtils::getSellOrderSize(ob), 0);
-
-                    //remaining buy quantity should be 300
-                    BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "S"), expected_pending_buy_S);
-                    BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "X"), total_buy_X);
-    
-                }
-            });
-
-
+    // create order book
+    OrderBook ob;
     //add buy order
     Order order_B_200S_buy{"B", 200, "S", OrderType::BUY};
     ob.addOrder(order_B_200S_buy);
@@ -212,19 +195,34 @@ BOOST_AUTO_TEST_CASE(test_match_one_to_many)
     expected_pending_buy_S = total_buy_S - matched_qty;
 
     Order order_A_200S_sell{"A", matched_qty, "S", OrderType::SELL};
-    expected_fills.emplace_back(order_A_200S_sell.order_id_);
-    expected_fills.emplace_back(order_B_200S_buy.order_id_);
-    expected_fills.emplace_back(order_C_100S_buy.order_id_);
+    expected_fills.push_back(order_A_200S_sell.order_id_);
+    expected_fills.push_back(order_B_200S_buy.order_id_);
+    expected_fills.push_back(order_C_100S_buy.order_id_);
+    ob.setResponseCallback( [&expected_fills, &actual_fills, &ob, expected_pending_buy_S, total_buy_X](int order_id) {
+        BOOST_REQUIRE(std::find(expected_fills.begin(), expected_fills.end(), order_id) != expected_fills.end());
+        actual_fills.push_back(order_id);
+
+        if (actual_fills.size() == expected_fills.size()) {
+            //sell order should have been completely matched
+            BOOST_REQUIRE_EQUAL(testUtils::getSellOrderSize(ob), 0);
+
+            //remaining buy quantity should be 300
+            BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "S"), expected_pending_buy_S);
+            BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "X"), total_buy_X);
+
+        }
+    });
+
     ob.addOrder(order_A_200S_sell);
 }
 
 BOOST_AUTO_TEST_CASE(test_partial_match)
 {
-    // create order book
-    OrderBook ob;
     std::vector<int> actual_fills;
     std::vector<int> expected_fills;
 
+    // create order book
+    OrderBook ob;
     //add buy order
     Order order_B_1000S_buy{"B", 1000, "S", OrderType::BUY};
     ob.addOrder(order_B_1000S_buy);
@@ -238,24 +236,24 @@ BOOST_AUTO_TEST_CASE(test_partial_match)
     auto matched_qty = 400;
     auto expected_pending_buy_S = total_buy_S - matched_qty;
 
-    ob.setResponseCallback( [&](int order_id) { 
-                BOOST_REQUIRE(std::find(expected_fills.begin(), expected_fills.end(), order_id) != expected_fills.end());
-                actual_fills.emplace_back(order_id);
-
-                if (actual_fills.size() == expected_fills.size()) {
-                    //sell order should have been completely matched, so not added to cache
-                    BOOST_REQUIRE_EQUAL(testUtils::getSellOrderSize(ob), 0);
-
-                    //remaining buy quantity should be 300
-                    BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "S"), expected_pending_buy_S);
-                    BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "X"), total_buy_X);
-                
-                }
-            });
-
-
     Order order_A_200S_sell{"A", matched_qty, "S", OrderType::SELL};
-    expected_fills.emplace_back(order_A_200S_sell.order_id_);
+    expected_fills.push_back(order_A_200S_sell.order_id_);
+
+    ob.setResponseCallback( [&expected_fills, &actual_fills, &ob, expected_pending_buy_S, total_buy_X](int order_id) {
+        BOOST_REQUIRE(std::find(expected_fills.begin(), expected_fills.end(), order_id) != expected_fills.end());
+        actual_fills.push_back(order_id);
+
+        if (actual_fills.size() == expected_fills.size()) {
+            //sell order should have been completely matched, so not added to cache
+            BOOST_REQUIRE_EQUAL(testUtils::getSellOrderSize(ob), 0);
+
+            //remaining buy quantity should be 300
+            BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "S"), expected_pending_buy_S);
+            BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "X"), total_buy_X);
+
+        }
+    });
+
     ob.addOrder(order_A_200S_sell);
 
    
@@ -263,46 +261,43 @@ BOOST_AUTO_TEST_CASE(test_partial_match)
     auto pending_sell_S = 100;
     matched_qty = expected_pending_buy_S + pending_sell_S;
 
-    ob.setResponseCallback( [&](int order_id) { 
-                BOOST_REQUIRE(std::find(expected_fills.begin(), expected_fills.end(), order_id) != expected_fills.end());
-                actual_fills.emplace_back(order_id);
-
-                if (actual_fills.size() == expected_fills.size()) {
-                    //buy order should have been completely matched
-                    BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "S"), 0);
-                    //BOOST_CHECK_EQUAL(testUtils::getBuyOrderSize(ob, "S"), 0);
-
-                    BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "X"), total_buy_X);
-               
-                }
-            });
-
 
     Order order_C_S_sell{"C", matched_qty, "S", OrderType::SELL};
-    expected_fills.emplace_back(order_B_1000S_buy.order_id_);
+    expected_fills.push_back(order_B_1000S_buy.order_id_);
+    ob.setResponseCallback( [&expected_fills, &actual_fills, &ob, total_buy_X](int order_id) {
+        BOOST_REQUIRE(std::find(expected_fills.begin(), expected_fills.end(), order_id) != expected_fills.end());
+        actual_fills.push_back(order_id);
+
+        if (actual_fills.size() == expected_fills.size()) {
+            //buy order should have been completely matched
+            BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "S"), 0);
+
+            BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "X"), total_buy_X);
+
+        }
+    });
+
     ob.addOrder(order_C_S_sell);
-
-    ob.setResponseCallback( [&](int order_id) { 
-                BOOST_REQUIRE(std::find(expected_fills.begin(), expected_fills.end(), order_id) != expected_fills.end());
-                actual_fills.emplace_back(order_id);
-
-                if (actual_fills.size() == expected_fills.size()) {
-                    //sell order should have been completely matched
-                    BOOST_CHECK_EQUAL(testUtils::getTotalSellQuantity(ob, "S"), 0);
-                    //BOOST_CHECK_EQUAL(testUtils::getSellOrderSize(ob, "S"), 0);
-                    BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "S"), 0);
-                    //BOOST_CHECK_EQUAL(testUtils::getBuyOrderSize(ob, "S"), 0);
-
-                    //no change for X
-                    BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "X"), total_buy_X);
-                }
-            });
 
 
     //add buy order 
     Order order_D_B_buy{"D", pending_sell_S, "S", OrderType::BUY};
-    expected_fills.emplace_back(order_C_S_sell.order_id_);
-    expected_fills.emplace_back(order_D_B_buy.order_id_);
+    expected_fills.push_back(order_C_S_sell.order_id_);
+    expected_fills.push_back(order_D_B_buy.order_id_);
+    ob.setResponseCallback( [&expected_fills, &actual_fills, &ob, expected_pending_buy_S, total_buy_X](int order_id) {
+        BOOST_REQUIRE(std::find(expected_fills.begin(), expected_fills.end(), order_id) != expected_fills.end());
+        actual_fills.push_back(order_id);
+
+        if (actual_fills.size() == expected_fills.size()) {
+            //sell order should have been completely matched
+            BOOST_CHECK_EQUAL(testUtils::getTotalSellQuantity(ob, "S"), 0);
+            BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "S"), 0);
+
+            //no change for X
+            BOOST_CHECK_EQUAL(testUtils::getTotalBuyQuantity(ob, "X"), total_buy_X);
+        }
+    });
+
     ob.addOrder(order_D_B_buy);
 
 }

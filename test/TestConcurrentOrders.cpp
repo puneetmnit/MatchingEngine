@@ -45,10 +45,10 @@ void addOrders(OrderBook& ob, OrderListT::iterator itr_begin, OrderListT::iterat
 namespace bdata = boost::unit_test::data;
 BOOST_DATA_TEST_CASE(test_add_orders, bdata::xrange(2))
 {
-    std::cout << "TEST: test_add_orders:\n";
-    constexpr const unsigned num_orders(10000.00);
+    //std::cout << "TEST: test_add_orders:\n";
+    constexpr const unsigned num_orders(1000);
     const unsigned num_threads = std::thread::hardware_concurrency();
-    std::cout << "threads: " << num_threads << std::endl;
+    //std::cout << "threads: " << num_threads << std::endl;
     const unsigned partition_size = num_orders / num_threads;
 
     OrderListT orders;
@@ -59,7 +59,7 @@ BOOST_DATA_TEST_CASE(test_add_orders, bdata::xrange(2))
     for(unsigned i=0; i<num_orders; ++i) {
         orders.emplace_back(rand_gen.getRandomString(1), rand_gen.getRandomInt(), rand_gen.getRandomTicker(),static_cast<OrderType>(sample));
     }
-    std::cout << "num of orders: " << orders.size()<< std::endl;
+    //std::cout << "num of orders: " << orders.size()<< std::endl;
 
     //find total quantity to compare later
     auto exp_total_qty = getQuantity(orders);
@@ -85,8 +85,8 @@ BOOST_DATA_TEST_CASE(test_add_orders, bdata::xrange(2))
     threads.reserve(num_threads);
     auto start_itr = iterators[0];
 
-    { 
-        boost::timer::auto_cpu_timer timer;
+    {
+   //     boost::timer::auto_cpu_timer timer;
         for (size_t i=1; i<iterators.size(); ++i) {
             threads.emplace_back(addOrders, std::ref(ob), start_itr, iterators[i]);
             start_itr = iterators[i];
@@ -109,10 +109,10 @@ BOOST_AUTO_TEST_CASE(test_match_orders)
 {
     std::cout << "TEST: test_match_orders:\n";
 
-    constexpr const unsigned num_orders(1.000000);
+    constexpr const unsigned num_orders(1000000);
     const unsigned num_threads = std::thread::hardware_concurrency();
     std::cout << "threads: " << num_threads << std::endl;
-    const unsigned partition_size = num_orders / num_threads;
+    const unsigned partition_size = (num_orders + num_threads - 1 )/ num_threads;
 
     OrderListT orders;
     orders.reserve(num_orders);
@@ -123,24 +123,15 @@ BOOST_AUTO_TEST_CASE(test_match_orders)
         orders.emplace_back(rand_gen.getRandomString(1), rand_gen.getRandomInt(), rand_gen.getRandomTicker(),static_cast<OrderType>(rand_gen.getRandomInt(0,1)));
     }
     std::cout << "num of orders: " << orders.size()<< std::endl;
-    //std::cout << "=====ORDERS====" << std::endl;
 
-    //for (auto& order: orders){
-        //std::cout << static_cast<int>(order.type_ )<< " " << order.ticker_ << " " << order.quantity_ << std::endl;
-    //};
 
-    //caculating buy-sell
+    //calculating buy-sell
     //find total quantity to compare later
     std::map<std::string, int> exp_total_qty;
     for(auto& order : orders) {
-        auto res = exp_total_qty.find(order.ticker_);
-        if (res != exp_total_qty.end()) {
-            res->second += (OrderType::BUY == order.type_ ? order.quantity_ : (-1 * order.quantity_));
-        }
-        else {  //not found
-            exp_total_qty[order.ticker_] = (OrderType::BUY == order.type_ ? order.quantity_: (-1 * order.quantity_));
-        } 
-    } 
+        exp_total_qty[order.ticker_] += (OrderType::BUY == order.type_ ? order.quantity_: (-1 * order.quantity_));
+        if (exp_total_qty[order.ticker_] == 0) exp_total_qty.erase(order.ticker_);
+    }
 
     //add iterators to use by different threads in a vector
     std::vector<OrderListT::iterator> iterators;
@@ -181,7 +172,6 @@ BOOST_AUTO_TEST_CASE(test_match_orders)
     auto actual_total_qty = testUtils::getOpenPosition(ob);
 
     BOOST_REQUIRE(testUtils::map_equals(exp_total_qty, actual_total_qty));
-    std::cout << "done\n";
 
 }
 
