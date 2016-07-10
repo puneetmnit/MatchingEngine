@@ -19,8 +19,6 @@
 
 #include <boost/flyweight.hpp>
 
-#include "OrderBookCache.h"
-
 
 struct Order;
 
@@ -127,8 +125,6 @@ public:
 
 
 private:
-    //OrderBookCache buyOrders_;
-    //OrderBookCache sellOrders_;
     CachingPolicy buyOrders_;
     CachingPolicy sellOrders_;
 
