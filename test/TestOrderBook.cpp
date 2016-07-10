@@ -122,9 +122,8 @@ BOOST_AUTO_TEST_CASE(test_match_buy)
         if (actual_fills.size() == expected_fills.size()) {
             BOOST_CHECK_EQUAL(testUtils::getBuyOrderSize(ob), 0);
             BOOST_CHECK_EQUAL(testUtils::getTotalSellQuantity(ob, "S"), 0);
-            //BOOST_CHECK_EQUAL(testUtils::getSellOrderSize(ob, "S"), 0);
             BOOST_CHECK_EQUAL(testUtils::getTotalSellQuantity(ob, "X"), 200);
-            //BOOST_CHECK_EQUAL(testUtils::getSellOrderSize(ob, "X"), 1);
+
         }
     });
     ob.addOrder(order_B_200S_buy);

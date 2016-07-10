@@ -6,8 +6,8 @@
 #define MATCHINGENGINE_ORDERBOOKCACHE_H
 
 #include <list>
+#include <mutex>
 #include <unordered_map>
-#include <thread>
 #include <string>
 #include <memory>
 #include <vector>
@@ -30,11 +30,6 @@ public:
     OrderListT flattenCache() const;
 
     void insert(Order order) ;
-
-    /**
-     * \brief Returns the bounds of the range that includes all the elements of the range [first,last) with key equivalent to order.ticker_.
-     */
-    //std::pair<OrderBookCacheValueT::iterator, OrderBookCacheValueT::iterator> equal_range(const Order& order);
 
 private:
     /**

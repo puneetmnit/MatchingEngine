@@ -35,7 +35,9 @@ struct Order
 public:
     enum class OrderType { BUY, SELL };
 
-    Order(std::string trader, int quantity, std::string ticker, OrderType type) : trader_(trader), quantity_(quantity), ticker_(ticker), type_(type), order_id_(count_.fetch_add(1)) {}
+    Order(std::string trader, int quantity, std::string ticker, OrderType type)
+            : trader_(trader), quantity_(quantity), ticker_(ticker), type_(type), order_id_(count_.fetch_add(1))
+    {}
 
     bool operator==(const Order& that) {
         return ( trader_ == that.trader_
@@ -61,7 +63,7 @@ public:
     //remove the flyweight, if this makes the code a little slower
     boost::flyweight<std::string> ticker_; ///< using flyweight as there is very small number of tickers as compared to number of orders active at a given time.
 
-    OrderType type_; ///< can be either BUY or SELL
+    OrderType type_;
     int order_id_;
     
 private:
@@ -74,7 +76,7 @@ private:
  * \brief A class to maintain all the orders across the system.
  *
  * OrderBook works on the Order structure. Currently, it doesn't care about the price and time of the orders.
- * This doesn't guarantee to match an earlier order first i.e. FCFS is not followed.
+ * Matching algorithm is abstracted in MatchingPolicy.
  */
 
 template <typename MatchingPolicy>
@@ -100,8 +102,6 @@ public:
 
         return true;
     }
-
-
 
 
     /** \brief set a callback which will be executed asynchronously on matching of any order
