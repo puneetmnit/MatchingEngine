@@ -8,12 +8,15 @@ Assumptions:
 1. Price is not considered.
 2. Orders filled in FCFS manner
 3. No logging
-4. Filled orders don't get removed from cache
-5. Order id is sent to OrderBook and there is no validation on it. This is used only for sending and validating success message.
-6. This is not thread-safe yet.
+
+Tested Environment:
+OS X 10.11.1
+1.3 GHz Intel Core i5
+4 GB 1600 MHz DDR3
+
 
 Dependencies:
 Clang with c++14 support
 cmake : version 3.5 or more
 boost : 1.59
-UTF : boost unit test framework
+

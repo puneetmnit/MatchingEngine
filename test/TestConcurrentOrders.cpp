@@ -11,6 +11,7 @@
 /*===========================================================================*/
 #include "../src/OrderBook.h"
 #include "../src/SimpleMatcher.h"
+#include "../src/OrderBookCache.h"
 
 #include <algorithm>
 #include <iostream>
@@ -83,7 +84,7 @@ BOOST_DATA_TEST_CASE(test_add_orders, bdata::xrange(2))
 
 
     // create order book
-    OrderBook<SimpleMatcher> ob;
+    OrderBook<SimpleMatcher, OrderBookCache> ob;
 
     //add orders via multiple threads
     std::vector<std::thread> threads;
@@ -94,7 +95,7 @@ BOOST_DATA_TEST_CASE(test_add_orders, bdata::xrange(2))
     {
    //     boost::timer::auto_cpu_timer timer;
         for (size_t i=1; i<iterators.size(); ++i) {
-            threads.emplace_back(std::thread(addOrders<OrderBook<SimpleMatcher>>, std::ref(ob), start_itr, iterators[i]));
+            threads.emplace_back(std::thread(addOrders<OrderBook<SimpleMatcher, OrderBookCache>>, std::ref(ob), start_itr, iterators[i]));
             start_itr = iterators[i];
         }
 
@@ -155,7 +156,7 @@ BOOST_AUTO_TEST_CASE(test_match_orders)
     iterators.push_back(orders.end());
 
     // create order book
-    OrderBook<SimpleMatcher> ob;
+    OrderBook<SimpleMatcher, OrderBookCache> ob;
 
     //add orders via multiple threads
     std::vector<std::thread> threads;
@@ -165,7 +166,7 @@ BOOST_AUTO_TEST_CASE(test_match_orders)
     { 
         boost::timer::auto_cpu_timer timer;
         for (size_t i=1; i<iterators.size(); ++i) {
-            threads.emplace_back(std::thread(addOrders<OrderBook<SimpleMatcher>>, std::ref(ob), start_itr, iterators[i]));
+            threads.emplace_back(std::thread(addOrders<OrderBook<SimpleMatcher, OrderBookCache>>, std::ref(ob), start_itr, iterators[i]));
             start_itr = iterators[i];
         }
 

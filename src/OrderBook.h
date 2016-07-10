@@ -79,7 +79,7 @@ private:
  * Matching algorithm is abstracted in MatchingPolicy.
  */
 
-template <typename MatchingPolicy>
+template <typename MatchingPolicy, typename CachingPolicy>
 class OrderBook
 {
 public:
@@ -127,8 +127,10 @@ public:
 
 
 private:
-    OrderBookCache buyOrders_;
-    OrderBookCache sellOrders_;
+    //OrderBookCache buyOrders_;
+    //OrderBookCache sellOrders_;
+    CachingPolicy buyOrders_;
+    CachingPolicy sellOrders_;
 
     ResponseCallbackT callback_;
     MatchingPolicy matcher_;    ///< algorithm to match the orders

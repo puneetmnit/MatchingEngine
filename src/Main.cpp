@@ -11,6 +11,7 @@
 /*===========================================================================*/
 #include "OrderBook.h"
 #include "SimpleMatcher.h"
+#include "OrderBookCache.h"
 
 
 /*===========================================================================*/
@@ -22,7 +23,7 @@ int main()
 {
     /* dummy main*/
 
-    OrderBook<SimpleMatcher> ob;
+    OrderBook<SimpleMatcher, OrderBookCache> ob;
 
     return 0;
 }

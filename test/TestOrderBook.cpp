@@ -13,6 +13,7 @@
 
 #include "../src/OrderBook.h"
 #include "../src/SimpleMatcher.h"
+#include "../src/OrderBookCache.h"
 
 #include <algorithm>
 
@@ -34,7 +35,7 @@ BOOST_DATA_TEST_CASE(test_zero_quantity, bdata::xrange(2))
     Order order_A_0S{"A", 0, "S", static_cast<Order::OrderType>(sample)};
 
     // create order book
-    OrderBook<SimpleMatcher> ob;
+    OrderBook<SimpleMatcher, OrderBookCache> ob;
 
     //add order
     BOOST_CHECK_EQUAL(false, ob.addOrder(order_A_0S));
@@ -47,7 +48,7 @@ BOOST_DATA_TEST_CASE(test_valid_ticker, bdata::xrange(2)*bdata::xrange(26), type
     std::string stock_ticker(1, ticker+'A');
     Order order_A{"A",1,stock_ticker,order_type};
 
-    OrderBook<SimpleMatcher> ob;
+    OrderBook<SimpleMatcher, OrderBookCache> ob;
     BOOST_CHECK_EQUAL(true, ob.addOrder(order_A));
 }
 
@@ -56,7 +57,7 @@ BOOST_AUTO_TEST_CASE(test_persist_buy_order)
     Order order_A_200S_buy{"A", 200, "S", Order::OrderType::BUY};
 
     // create order book
-    OrderBook<SimpleMatcher> ob;
+    OrderBook<SimpleMatcher, OrderBookCache> ob;
 
     //add order
     BOOST_REQUIRE_NO_THROW(ob.addOrder(order_A_200S_buy));
@@ -77,7 +78,7 @@ BOOST_AUTO_TEST_CASE(test_persist_sell_order)
     Order order_A_200S_sell{"A", 200, "S", Order::OrderType::SELL};
 
     // create order book
-    OrderBook<SimpleMatcher> ob;
+    OrderBook<SimpleMatcher, OrderBookCache> ob;
 
     //add order
     BOOST_REQUIRE_NO_THROW(ob.addOrder(order_A_200S_sell));
@@ -99,7 +100,7 @@ BOOST_AUTO_TEST_CASE(test_match_buy)
     std::vector<int> expected_fills;
 
     // create order book
-    OrderBook<SimpleMatcher> ob;
+    OrderBook<SimpleMatcher, OrderBookCache> ob;
 
     //add sell order
     Order order_A_200S_sell{"A", 200, "S", Order::OrderType::SELL};
@@ -135,7 +136,7 @@ BOOST_AUTO_TEST_CASE(test_match_sell)
     std::vector<int> expected_fills;
 
     // create order book
-    OrderBook<SimpleMatcher> ob;
+    OrderBook<SimpleMatcher, OrderBookCache> ob;
     //add buy order
     Order order_B_200S_buy{"B", 200, "S", Order::OrderType::BUY};
     ob.addOrder(order_B_200S_buy);
@@ -173,7 +174,7 @@ BOOST_AUTO_TEST_CASE(test_match_one_to_many)
 
 
     // create order book
-    OrderBook<SimpleMatcher> ob;
+    OrderBook<SimpleMatcher, OrderBookCache> ob;
     //add buy order
     Order order_B_200S_buy{"B", 200, "S", Order::OrderType::BUY};
     ob.addOrder(order_B_200S_buy);
@@ -221,7 +222,7 @@ BOOST_AUTO_TEST_CASE(test_partial_match)
     std::vector<int> expected_fills;
 
     // create order book
-    OrderBook<SimpleMatcher> ob;
+    OrderBook<SimpleMatcher, OrderBookCache> ob;
     //add buy order
     Order order_B_1000S_buy{"B", 1000, "S", Order::OrderType::BUY};
     ob.addOrder(order_B_1000S_buy);
