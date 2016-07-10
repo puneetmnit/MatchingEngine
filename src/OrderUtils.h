@@ -9,11 +9,8 @@
 #define _MATCHINGENGINE_SRC_ORDERUTILS_H__
 
 #include <vector>
+#include "OrderBook.h"
 
-class OrderBook;
-struct Order;
-
-using OrderListT = std::vector<Order> ;
 
 namespace orderutils {
 
@@ -22,14 +19,23 @@ namespace orderutils {
      * It simply returs a list of Orders. i.e. a c++ std::vector, not sorted in any particular order.
      * These orders are clones of the existing open orders from the given order book.
      */
-    OrderListT getBuyOrders(const OrderBook& orderbook) ;
+    template<typename OrderBookT>
+    auto getBuyOrders(const OrderBookT& orderbook)
+    {
+        return orderbook.getBuyOrders().flattenCache();
+    }
+
 
     /** \brief helper function to get the buy side open orders from a supplied order book.
      *
      * It simply returs a list of Orders. i.e. a c++ std::vector, not sorted in any particular order.
      * These orders are clones of the existing open orders from the given order book.
      */
-    OrderListT getSellOrders( const OrderBook& orderbook) ;
+    template<typename OrderBookT>
+    auto getSellOrders( const OrderBookT& orderbook)
+    {
+        return orderbook.getSellOrders().flattenCache();
+    }
 
 
 }// namespace orderutils

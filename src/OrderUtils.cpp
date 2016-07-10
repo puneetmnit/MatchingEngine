@@ -10,24 +10,13 @@
 /*===============================[ include headers ]===============================*/
 /*===========================================================================*/
 
-#include "OrderUtils.h"
-#include "OrderBook.h"
+//do Nothing
 
 /*===========================================================================*/
 /*===============================[ include headers ]===============================*/
 /*===========================================================================*/
 
 
-OrderListT orderutils::getBuyOrders(const OrderBook& orderbook) 
-{
-    return orderbook.buyOrders_.flattenCache();
-
-}
-
-OrderListT orderutils::getSellOrders(const OrderBook& orderbook)
-{
-    return orderbook.sellOrders_.flattenCache();
-}
 
 
 

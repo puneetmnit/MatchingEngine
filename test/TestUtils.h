@@ -63,7 +63,7 @@ namespace testUtils {
     } 
 
     template<typename T>
-    auto getQuantity(const T& container, OrderType type) {
+    auto getQuantity(const T& container, Order::OrderType type) {
         return std::accumulate(std::begin(container), std::end(container), 0, [&type](auto sum, auto order) {
                     return type == order.type_ ? sum + order.quantity_ : sum;
                 } );
@@ -76,43 +76,69 @@ namespace testUtils {
                 } );
     } 
 
-    inline auto getBuyOrderSize(const OrderBook& orderbook) { 
+    template <typename OrderBookT>
+    auto getBuyOrderSize(const OrderBookT& orderbook) {
         return orderutils::getBuyOrders(orderbook).size(); 
     }
 
-    inline auto getSellOrderSize(const OrderBook& orderbook) { 
+    template <typename OrderBookT>
+    auto getSellOrderSize(const OrderBookT& orderbook) {
         return orderutils::getSellOrders(orderbook).size(); 
     }
 
-    inline auto getBuyOrderSize(const OrderBook& orderbook, std::string ticker) {
+    template <typename OrderBookT>
+    auto getBuyOrderSize(const OrderBookT& orderbook, std::string ticker) {
         const auto& buy_orders = orderutils::getBuyOrders(orderbook);
         return getCount(buy_orders, ticker);
     } 
 
-    inline auto getSellOrderSize(const OrderBook& orderbook, std::string ticker) {
+    template <typename OrderBookT>
+    auto getSellOrderSize(const OrderBookT& orderbook, std::string ticker) {
         const auto& sell_orders = orderutils::getSellOrders(orderbook);
         return getCount(sell_orders, ticker);
     } 
 
-    inline auto getTotalBuyQuantity(const OrderBook& orderbook) {
+    template <typename OrderBookT>
+    auto getTotalBuyQuantity(const OrderBookT& orderbook) {
         const auto& buy_orders = orderutils::getBuyOrders(orderbook);
         return getQuantity(buy_orders);
     }
-    inline auto getTotalBuyQuantity(const OrderBook& orderbook, std::string ticker) {
+
+    template <typename OrderBookT>
+    auto getTotalBuyQuantity(const OrderBookT& orderbook, std::string ticker) {
         const auto& buy_orders = orderutils::getBuyOrders(orderbook);
         return getQuantity(buy_orders, ticker);
     }
 
-    inline auto getTotalSellQuantity(const OrderBook& orderbook) {
+    template <typename OrderBookT>
+    auto getTotalSellQuantity(const OrderBookT& orderbook) {
         const auto& sell_orders = orderutils::getSellOrders(orderbook);
         return getQuantity(sell_orders);
     }
-    inline auto getTotalSellQuantity(const OrderBook& orderbook, std::string ticker) {
+    template <typename OrderBookT>
+    auto getTotalSellQuantity(const OrderBookT& orderbook, std::string ticker) {
         const auto& sell_orders = orderutils::getSellOrders(orderbook);
         return getQuantity(sell_orders, ticker);
     }
 
-    std::map<std::string,int> getOpenPosition(const OrderBook& orderbook) ;
+    template <typename OrderBookT>
+    std::map<std::string,int> getOpenPosition(const OrderBookT& orderbook)
+    {
+        std::map<std::string, int> result;
+
+        const auto& buy_orders = orderutils::getBuyOrders(orderbook);
+
+        for_each(buy_orders.begin(), buy_orders.end(), [&result](const auto& order) {
+            result[order.ticker_] += order.quantity_;
+        });
+
+        const auto& sell_orders = orderutils::getSellOrders(orderbook);
+        for_each(sell_orders.begin(), sell_orders.end(), [&result](const auto& order) {
+            result[order.ticker_] -= order.quantity_;
+        });
+
+        return result;
+    }
 
     class Random {
     public:

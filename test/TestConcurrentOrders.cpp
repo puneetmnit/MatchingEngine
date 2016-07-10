@@ -10,11 +10,13 @@
 /*===============================[ include ]===============================*/
 /*===========================================================================*/
 #include "../src/OrderBook.h"
+#include "../src/SimpleMatcher.h"
 
 #include <algorithm>
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <future>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
@@ -33,12 +35,15 @@
 BOOST_AUTO_TEST_SUITE(TestConcurrent)
 using namespace testUtils;
 namespace   {
-void addOrders(OrderBook& ob, OrderListT::iterator itr_begin, OrderListT::iterator itr_end)
-{
-    std::for_each(itr_begin, itr_end, [&ob](auto order){
-                ob.addOrder(order);
-            } );
-}  
+
+    template<typename OrderBookT>
+    void addOrders(OrderBookT& ob, OrderListT::iterator itr_begin, OrderListT::iterator itr_end)
+    {
+        std::for_each(itr_begin, itr_end, [&ob](auto order){
+                    ob.addOrder(order);
+                } );
+
+    }
 
 }// namespace  
 
@@ -57,7 +62,7 @@ BOOST_DATA_TEST_CASE(test_add_orders, bdata::xrange(2))
     //create and add orders in a vector
     testUtils::Random rand_gen;
     for(unsigned i=0; i<num_orders; ++i) {
-        orders.emplace_back(rand_gen.getRandomString(1), rand_gen.getRandomInt(), rand_gen.getRandomTicker(),static_cast<OrderType>(sample));
+        orders.emplace_back(rand_gen.getRandomString(1), rand_gen.getRandomInt(), rand_gen.getRandomTicker(),static_cast<Order::OrderType>(sample));
     }
     //std::cout << "num of orders: " << orders.size()<< std::endl;
 
@@ -78,19 +83,21 @@ BOOST_DATA_TEST_CASE(test_add_orders, bdata::xrange(2))
 
 
     // create order book
-    OrderBook ob;
+    OrderBook<SimpleMatcher> ob;
 
     //add orders via multiple threads
     std::vector<std::thread> threads;
     threads.reserve(num_threads);
+
     auto start_itr = iterators[0];
 
     {
    //     boost::timer::auto_cpu_timer timer;
         for (size_t i=1; i<iterators.size(); ++i) {
-            threads.emplace_back(addOrders, std::ref(ob), start_itr, iterators[i]);
+            threads.emplace_back(std::thread(addOrders<OrderBook<SimpleMatcher>>, std::ref(ob), start_itr, iterators[i]));
             start_itr = iterators[i];
         }
+
 
         //wait for completion
         std::for_each(threads.begin(), threads.end(), [](auto& t) {
@@ -120,7 +127,7 @@ BOOST_AUTO_TEST_CASE(test_match_orders)
     //create and add orders in a vector
     testUtils::Random rand_gen;
     for(unsigned i=0; i<num_orders; ++i) {
-        orders.emplace_back(rand_gen.getRandomString(1), rand_gen.getRandomInt(), rand_gen.getRandomTicker(),static_cast<OrderType>(rand_gen.getRandomInt(0,1)));
+        orders.emplace_back(rand_gen.getRandomString(1), rand_gen.getRandomInt(), rand_gen.getRandomTicker(),static_cast<Order::OrderType>(rand_gen.getRandomInt(0,1)));
     }
     std::cout << "num of orders: " << orders.size()<< std::endl;
 
@@ -129,7 +136,7 @@ BOOST_AUTO_TEST_CASE(test_match_orders)
     //find total quantity to compare later
     std::map<std::string, int> exp_total_qty;
     for(auto& order : orders) {
-        exp_total_qty[order.ticker_] += (OrderType::BUY == order.type_ ? order.quantity_: (-1 * order.quantity_));
+        exp_total_qty[order.ticker_] += (Order::OrderType::BUY == order.type_ ? order.quantity_: (-1 * order.quantity_));
         if (exp_total_qty[order.ticker_] == 0) exp_total_qty.erase(order.ticker_);
     }
 
@@ -148,7 +155,7 @@ BOOST_AUTO_TEST_CASE(test_match_orders)
     iterators.push_back(orders.end());
 
     // create order book
-    OrderBook ob;
+    OrderBook<SimpleMatcher> ob;
 
     //add orders via multiple threads
     std::vector<std::thread> threads;
@@ -158,7 +165,7 @@ BOOST_AUTO_TEST_CASE(test_match_orders)
     { 
         boost::timer::auto_cpu_timer timer;
         for (size_t i=1; i<iterators.size(); ++i) {
-            threads.emplace_back(addOrders, std::ref(ob), start_itr, iterators[i]);
+            threads.emplace_back(std::thread(addOrders<OrderBook<SimpleMatcher>>, std::ref(ob), start_itr, iterators[i]));
             start_itr = iterators[i];
         }
 

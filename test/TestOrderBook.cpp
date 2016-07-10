@@ -12,6 +12,7 @@
 #define BOOST_TEST_MODULE TestOrderBook
 
 #include "../src/OrderBook.h"
+#include "../src/SimpleMatcher.h"
 
 #include <algorithm>
 
@@ -30,11 +31,10 @@ BOOST_AUTO_TEST_SUITE(TestSingleThreaded)
 namespace bdata = boost::unit_test::data;
 BOOST_DATA_TEST_CASE(test_zero_quantity, bdata::xrange(2))
 {
-    //Order order_A_0S{"A", 0, "S", static_cast<OrderType>(sample), sample};
-    Order order_A_0S{"A", 0, "S", static_cast<OrderType>(sample)};
+    Order order_A_0S{"A", 0, "S", static_cast<Order::OrderType>(sample)};
 
     // create order book
-    OrderBook ob;
+    OrderBook<SimpleMatcher> ob;
 
     //add order
     BOOST_CHECK_EQUAL(false, ob.addOrder(order_A_0S));
@@ -43,20 +43,20 @@ BOOST_DATA_TEST_CASE(test_zero_quantity, bdata::xrange(2))
 
 BOOST_DATA_TEST_CASE(test_valid_ticker, bdata::xrange(2)*bdata::xrange(26), type, ticker)
 {
-    auto order_type = static_cast<OrderType>(type);
+    auto order_type = static_cast<Order::OrderType>(type);
     std::string stock_ticker(1, ticker+'A');
     Order order_A{"A",1,stock_ticker,order_type};
 
-    OrderBook ob;
+    OrderBook<SimpleMatcher> ob;
     BOOST_CHECK_EQUAL(true, ob.addOrder(order_A));
 }
 
 BOOST_AUTO_TEST_CASE(test_persist_buy_order)
 {
-    Order order_A_200S_buy{"A", 200, "S", OrderType::BUY};
+    Order order_A_200S_buy{"A", 200, "S", Order::OrderType::BUY};
 
     // create order book
-    OrderBook ob;
+    OrderBook<SimpleMatcher> ob;
 
     //add order
     BOOST_REQUIRE_NO_THROW(ob.addOrder(order_A_200S_buy));
@@ -74,10 +74,10 @@ BOOST_AUTO_TEST_CASE(test_persist_buy_order)
 
 BOOST_AUTO_TEST_CASE(test_persist_sell_order)
 {
-    Order order_A_200S_sell{"A", 200, "S", OrderType::SELL};
+    Order order_A_200S_sell{"A", 200, "S", Order::OrderType::SELL};
 
     // create order book
-    OrderBook ob;
+    OrderBook<SimpleMatcher> ob;
 
     //add order
     BOOST_REQUIRE_NO_THROW(ob.addOrder(order_A_200S_sell));
@@ -99,12 +99,12 @@ BOOST_AUTO_TEST_CASE(test_match_buy)
     std::vector<int> expected_fills;
 
     // create order book
-    OrderBook ob;
+    OrderBook<SimpleMatcher> ob;
 
     //add sell order
-    Order order_A_200S_sell{"A", 200, "S", OrderType::SELL};
+    Order order_A_200S_sell{"A", 200, "S", Order::OrderType::SELL};
     ob.addOrder(order_A_200S_sell);
-    Order order_A_200X_sell{"A", 200, "X", OrderType::SELL};
+    Order order_A_200X_sell{"A", 200, "X", Order::OrderType::SELL};
     ob.addOrder(order_A_200X_sell);
 
     BOOST_CHECK_EQUAL(testUtils::getBuyOrderSize(ob), 0);
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(test_match_buy)
     
 
     //add buy order
-    Order order_B_200S_buy{"B", 200, "S", OrderType::BUY};
+    Order order_B_200S_buy{"B", 200, "S", Order::OrderType::BUY};
     expected_fills.push_back(order_B_200S_buy.order_id_);
     expected_fills.push_back(order_A_200S_sell.order_id_);
     ob.setResponseCallback( [&expected_fills, &actual_fills, &ob](int order_id) {
@@ -136,18 +136,18 @@ BOOST_AUTO_TEST_CASE(test_match_sell)
     std::vector<int> expected_fills;
 
     // create order book
-    OrderBook ob;
+    OrderBook<SimpleMatcher> ob;
     //add buy order
-    Order order_B_200S_buy{"B", 200, "S", OrderType::BUY};
+    Order order_B_200S_buy{"B", 200, "S", Order::OrderType::BUY};
     ob.addOrder(order_B_200S_buy);
-    Order order_B_200X_buy{"B", 200, "X", OrderType::BUY};
+    Order order_B_200X_buy{"B", 200, "X", Order::OrderType::BUY};
     ob.addOrder(order_B_200X_buy);
     
     BOOST_CHECK_EQUAL(testUtils::getBuyOrderSize(ob, "S"), 1);
     BOOST_CHECK_EQUAL(testUtils::getSellOrderSize(ob), 0);
     
     //add sell order
-    Order order_A_200S_sell{"A", 200, "S", OrderType::SELL};
+    Order order_A_200S_sell{"A", 200, "S", Order::OrderType::SELL};
     expected_fills.push_back(order_A_200S_sell.order_id_);
     expected_fills.push_back(order_B_200S_buy.order_id_);
     ob.setResponseCallback( [&expected_fills, &actual_fills, &ob](int order_id) {
@@ -174,17 +174,17 @@ BOOST_AUTO_TEST_CASE(test_match_one_to_many)
 
 
     // create order book
-    OrderBook ob;
+    OrderBook<SimpleMatcher> ob;
     //add buy order
-    Order order_B_200S_buy{"B", 200, "S", OrderType::BUY};
+    Order order_B_200S_buy{"B", 200, "S", Order::OrderType::BUY};
     ob.addOrder(order_B_200S_buy);
-    Order order_C_100S_buy{"C", 100, "S", OrderType::BUY};
+    Order order_C_100S_buy{"C", 100, "S", Order::OrderType::BUY};
     ob.addOrder(order_C_100S_buy);
-    Order order_D_300S_buy{"D", 300, "S", OrderType::BUY};
+    Order order_D_300S_buy{"D", 300, "S", Order::OrderType::BUY};
     ob.addOrder(order_D_300S_buy);
-    Order order_E_200S_buy{"E", 100, "S", OrderType::BUY};
-    ob.addOrder(order_E_200S_buy);
-    Order order_B_200X_buy{"B", 400, "X", OrderType::BUY};
+    Order order_E_200S_buy{"E", 100, "S", Order::OrderType::BUY};
+    ob.addOrder(order_E_200S_buy);Order::
+    Order order_B_200X_buy{"B", 400, "X", Order::OrderType::BUY};
     ob.addOrder(order_B_200X_buy);
 
     auto total_buy_S = testUtils::getTotalBuyQuantity(ob, "S");
@@ -194,7 +194,7 @@ BOOST_AUTO_TEST_CASE(test_match_one_to_many)
     auto matched_qty = 400;
     expected_pending_buy_S = total_buy_S - matched_qty;
 
-    Order order_A_200S_sell{"A", matched_qty, "S", OrderType::SELL};
+    Order order_A_200S_sell{"A", matched_qty, "S", Order::OrderType::SELL};
     expected_fills.push_back(order_A_200S_sell.order_id_);
     expected_fills.push_back(order_B_200S_buy.order_id_);
     expected_fills.push_back(order_C_100S_buy.order_id_);
@@ -222,11 +222,11 @@ BOOST_AUTO_TEST_CASE(test_partial_match)
     std::vector<int> expected_fills;
 
     // create order book
-    OrderBook ob;
+    OrderBook<SimpleMatcher> ob;
     //add buy order
-    Order order_B_1000S_buy{"B", 1000, "S", OrderType::BUY};
+    Order order_B_1000S_buy{"B", 1000, "S", Order::OrderType::BUY};
     ob.addOrder(order_B_1000S_buy);
-    Order order_B_200X_buy{"B", 400, "X", OrderType::BUY};
+    Order order_B_200X_buy{"B", 400, "X", Order::OrderType::BUY};
     ob.addOrder(order_B_200X_buy);
 
     auto total_buy_S = testUtils::getTotalBuyQuantity(ob, "S");
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE(test_partial_match)
     auto matched_qty = 400;
     auto expected_pending_buy_S = total_buy_S - matched_qty;
 
-    Order order_A_200S_sell{"A", matched_qty, "S", OrderType::SELL};
+    Order order_A_200S_sell{"A", matched_qty, "S", Order::OrderType::SELL};
     expected_fills.push_back(order_A_200S_sell.order_id_);
 
     ob.setResponseCallback( [&expected_fills, &actual_fills, &ob, expected_pending_buy_S, total_buy_X](int order_id) {
@@ -262,7 +262,7 @@ BOOST_AUTO_TEST_CASE(test_partial_match)
     matched_qty = expected_pending_buy_S + pending_sell_S;
 
 
-    Order order_C_S_sell{"C", matched_qty, "S", OrderType::SELL};
+    Order order_C_S_sell{"C", matched_qty, "S", Order::OrderType::SELL};
     expected_fills.push_back(order_B_1000S_buy.order_id_);
     ob.setResponseCallback( [&expected_fills, &actual_fills, &ob, total_buy_X](int order_id) {
         BOOST_REQUIRE(std::find(expected_fills.begin(), expected_fills.end(), order_id) != expected_fills.end());
@@ -281,7 +281,7 @@ BOOST_AUTO_TEST_CASE(test_partial_match)
 
 
     //add buy order 
-    Order order_D_B_buy{"D", pending_sell_S, "S", OrderType::BUY};
+    Order order_D_B_buy{"D", pending_sell_S, "S", Order::OrderType::BUY};
     expected_fills.push_back(order_C_S_sell.order_id_);
     expected_fills.push_back(order_D_B_buy.order_id_);
     ob.setResponseCallback( [&expected_fills, &actual_fills, &ob, expected_pending_buy_S, total_buy_X](int order_id) {

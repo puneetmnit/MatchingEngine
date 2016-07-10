@@ -19,19 +19,12 @@
 
 #include <boost/flyweight.hpp>
 
-
-#include "OrderUtils.h"
+#include "OrderBookCache.h"
 
 
 struct Order;
-using OrderListT = std::vector<Order>;
-using OrderBookCacheValueT = std::list<Order>; ///> \todo : there should be locable object also associated with it
-using OrderBookCacheT = std::unordered_map<std::string, std::pair<std::unique_ptr<std::mutex>,OrderBookCacheValueT>>;
-using OrderBookCacheIterT = OrderBookCacheT::iterator;
 
 using ResponseCallbackT = std::function<void(int)>;
-
-enum class OrderType { BUY, SELL };
 
 /**
  * \brief A simple Order structure. Kindly note that it even doesn't have a price point
@@ -40,41 +33,42 @@ enum class OrderType { BUY, SELL };
 struct Order
 {
 public:
+    enum class OrderType { BUY, SELL };
+
     Order(std::string trader, int quantity, std::string ticker, OrderType type) : trader_(trader), quantity_(quantity), ticker_(ticker), type_(type), order_id_(count_.fetch_add(1)) {}
 
-    //Order(const Order& order) : trader_(order.trader_), quantity_(order.quantity_.load()), ticker_(order.ticker_), type_(order.type_), order_id_(order.order_id_)
-    //{}
-
-    //Order(Order&& order) noexcept : trader_(std::move(order.trader_)), quantity_(order.quantity_.load()), ticker_(std::move(order.ticker_)), type_(std::move(order.type_)), order_id_(std::move(order.order_id_))
-    //{}
-
-    //no assignment operators
-    //Order& operator=(const Order&) = delete;
-    //Order& operator=(Order&&) = delete;
-
-    
-
-   bool operator==(const Order& that) {
+    bool operator==(const Order& that) {
         return ( trader_ == that.trader_
                 && quantity_  == that.quantity_
                 && ticker_ == that.ticker_
                 && type_ == that.type_);
     }
 
+    bool isValid()
+    {
+        //1. ticker must be between "A" and "Z" (both inclusive)
+        //2. quantity must be an integer greater than 0
+        return quantity_ > 0
+               && ticker_.get().size() == 1
+               && ticker_.get().at(0) >= 'A'
+               && ticker_.get().at(0) <= 'Z';
+    }
+
 public:
     std::string trader_;
     int quantity_;
-    std::string ticker_;
-    //std::atomic<int> quantity_;
-    //boost::flyweight<std::string> ticker_; ///< using flyweight as there is very small number of tickers as compared to number of orders active at a given time.
+    //std::string ticker_;
+    //remove the flyweight, if this makes the code a little slower
+    boost::flyweight<std::string> ticker_; ///< using flyweight as there is very small number of tickers as compared to number of orders active at a given time.
 
     OrderType type_; ///< can be either BUY or SELL
     int order_id_;
     
 private:
-        static std::atomic<int> count_;
+    static std::atomic<int> count_; ///< to set unique order_ids. This is assuming that unique order ids are not needed across server instances.
 
 };
+
 
 /**
  * \brief A class to maintain all the orders across the system.
@@ -83,13 +77,32 @@ private:
  * This doesn't guarantee to match an earlier order first i.e. FCFS is not followed.
  */
 
+template <typename MatchingPolicy>
 class OrderBook
 {
 public:
-    ~OrderBook();
+    /***
+     * \brief to add new order
+     *  \ return false if not a valid order.
+     */
+    bool addOrder(Order order)
+    {
+        if (!order.isValid())
+            return false;
 
-    //return false if not a valid order
-    bool addOrder(Order order);   ///< use to add new orders
+        if (Order::OrderType::BUY == order.type_) {
+            // try to match with sell
+            matcher_(std::move(order), buyOrders_, sellOrders_, callback_);
+        }
+        else {
+            matcher_(std::move(order), sellOrders_, buyOrders_, callback_);
+        }
+
+        return true;
+    }
+
+
+
 
     /** \brief set a callback which will be executed asynchronously on matching of any order
      *
@@ -99,48 +112,28 @@ public:
         callback_ = callback;
     }
 
-    friend OrderListT orderutils::getBuyOrders(const OrderBook& orderbook) ;
-    friend OrderListT orderutils::getSellOrders( const OrderBook& orderbook) ;
+    /// \brief helper function to get a copy of pending buy orders
+    /// It doesn't make any changes in the orderbook.
+    auto& getBuyOrders() const {
+        return buyOrders_;
+    }
 
-    struct OrderBookCache {
-    public:
-        OrderBookCache();
-
-        /**
-         * \brief copy the pending orders to a vector of orders, for easy traversal
-         */
-        OrderListT flattenCache() const;
-
-        void insert(Order order) ;
-        
-        /**
-         * \brief Returns the bounds of the range that includes all the elements of the range [first,last) with key equivalent to order.ticker_.
-         */
-        std::pair<OrderBookCacheValueT::iterator, OrderBookCacheValueT::iterator> equal_range(const Order& order);
-        //std::atomic<OrderBookCacheValueT::pointer> locked_element_;
-
-    private:
-        /**
-         * \brief initialize the cache with all the valid stocks, so that the cache keys will never change throughout the porgram
-         */
-        void initCache();
+    /// \brief helper function to get a copy of pending buy orders
+    /// It doesn't make any changes in the orderbook.
+    auto& getSellOrders() const {
+        return sellOrders_;
+    } ;
 
 
-    public:
-        OrderBookCacheT orders_;
-    };
-
-    std::vector<std::thread> replies_;
-    std::mutex replyLock_;
 
 private:
     OrderBookCache buyOrders_;
     OrderBookCache sellOrders_;
 
     ResponseCallbackT callback_;
-
-
+    MatchingPolicy matcher_;    ///< algorithm to match the orders
 
 };
+
 
 #endif // _MATCHINGENGINE_SRC_ORDERBOOK_H__»
