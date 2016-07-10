@@ -83,7 +83,6 @@ public:
         }
 
     }
-    //void operator()(Order order, OrderBookCache& myStore, OrderBookCache& otherSide, const ResponseCallbackT& callback);
 
     ~SimpleMatcher();
 
@@ -91,9 +90,6 @@ private:
     void async_reply(int order_id, const ResponseCallbackT& callback);
 
 private:
-    //OrderBookCache buyOrders_;
-    //OrderBookCache sellOrders_;
-
     std::vector<std::thread> replies_; ///< to track all the replies sent
     std::mutex replyLock_;
 
