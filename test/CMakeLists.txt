@@ -1,5 +1,7 @@
 set(test_exe TestOrderBook )
 
+find_package(Boost 1.59 REQUIRED COMPONENTS unit_test_framework timer system)
+
 #boost
 #set(Boost_USE_STATIC_LIBS TRUE)
 ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK) 
@@ -13,6 +15,7 @@ file(GLOB SOURCES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "../src/*.cpp")
 list(REMOVE_ITEM SOURCES "../src/Main.cpp")
 
 #executable
+
 add_executable(${test_exe} ${TEST_SOURCES} ${SOURCES})
 target_link_libraries(${test_exe} ${Boost_LIBRARIES})
 
